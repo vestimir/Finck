@@ -4,8 +4,8 @@ namespace Finck;
 
 class App
 {
-    protected $debug = false;
     public $request;
+    protected $debug = false;
     protected $routes = array();
     protected $middleware = array();
 
