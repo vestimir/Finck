@@ -10,7 +10,7 @@ Examples:
 
     //Matches empty regex - the root url
     $app->route('', function () {
-            return "This is a homepage";
+        return "This is a homepage";
     }, 'homepage');
 
     //matches user-profile and pass it to the controller class
