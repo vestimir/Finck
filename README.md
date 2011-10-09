@@ -1,10 +1,24 @@
-Usage:
+Finck is used for quick definition of URL resources.
+
+*`App::route($regex, $handler, $route_name = null)`*
+
+The routing is done by defining a regular expression string that will match desired url, a handler (closure or `array($class, $method)`) and route name.
+Every handler must return a string (or method that generates string if you are using a template engine) and by default accepts one parameter - the Request object.
+Hint: The regular expression can use named groups to simplify the usage of url parameters.
+
+Examples:
+
+    //Matches empty regex - the root url
+    $app->route('', function () {
+            return "This is a homepage";
+    }, 'homepage');
+
+    //matches user-profile and pass it to the controller class
+    $app->route('user/(?P<username>.*)', array('Users', 'profile'));
+
+Exmaple index.php:
 
     <?php
-    /*
-     * File: index.php
-     */
-
     require_once 'finck.php';
 
     $app = new \Finck\App();
@@ -14,3 +28,5 @@ Usage:
     $app->route('', function () {
         return "Welcome to our homepage! ";
     }, 'homepage');
+
+    $app->dispatch();
