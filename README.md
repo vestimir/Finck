@@ -14,7 +14,14 @@ Examples:
     }, 'homepage');
 
     //matches user-profile and pass it to the controller class
-    $app->route('user/(?P<username>.*)', array('Users', 'profile'));
+    class Users
+    {
+        public function profile($request) {
+            return $request->params['username']
+        }
+    }
+
+    $app->route('user/(?P<username>\w+)', array('Users', 'profile'));
 
 Exmaple index.php:
 
@@ -22,7 +29,7 @@ Exmaple index.php:
     require_once 'finck.php';
 
     $app = new \Finck\App();
-    $app->route('hello/(?P<name>)', function ($request) {
+    $app->route('hello/(?P<name>\w+)', function ($request) {
         return "Hello, " . $request->params['name'];
     });
     $app->route('', function () {
