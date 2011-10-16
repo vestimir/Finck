@@ -57,6 +57,7 @@ class App
             }
         }
 
+        //todo: add here default 404 as route or maybe handle exceptions as static files 404.html, 500.html
         if (!$this->request->route) throw new NotFoundException("No route found");
 
         //here process middleware request
@@ -99,9 +100,9 @@ class Request
     }
 
 
-    public static function all()
+    public static function all($default = array())
     {
-        return $_REQUEST;
+        return $_REQUEST ? $_REQUEST : $default;
     }
 
 
@@ -118,18 +119,10 @@ class Request
 }
 
 
-class Middleware
+abstract class Middleware
 {
-    public static function process_request($request)
-    {
-        return $request;
-    }
-
-
-    public static function process_response($response)
-    {
-        return $response;
-    }
+    abstract public static function process_request($request);
+    abstract public static function process_response($response);
 }
 
 class NotFoundException extends \Exception {}
