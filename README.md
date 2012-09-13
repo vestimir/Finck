@@ -1,11 +1,17 @@
 Finck is a small library for defining URL resources. It can be used for prototyping, simple web projects and even large scale applications. Finck does not provide any obligatory structure, particular template engine, or conventions, you can build upon its simplicity and integrate it in your own workflow.
 
-*`App::route($request_method, $regex, $handler, $route_name = null)`*
+    App::route($request_method, $regex, $handler, $route_name = null)
+    App::get($regex, $handler, $route_name = null)
+    App::post($regex, $handler, $route_name = null)
+    App::put($regex, $handler, $route_name = null)
+    App::delete($regex, $handler, $route_name = null)
+    App::all($regex, $handler, $route_name = null)
 
 The routing is done by the `route` method. It accepts the following parameters: http request method, a regular expression string that will match the desired url, a handler (closure or an array of type `array('class', 'method')`) and route name.
 Every handler must return a string (or method that generates string if you are using a template engine) and by default accepts one parameter - the Request object.
-Hint: The regular expression can use named groups to simplify the usage of parameters in the handler.
-Hint 2: There are shorthand methods for routing with different request methods - get, post, put, delete and all, which routes the matched url regardles of the request method.
+
+ - *Hint*: The regular expression can use named groups to simplify the usage of parameters in the handler.
+ - *Hint 2*: There are shorthand methods for routing with different request methods - get, post, put, delete and all, which routes the matched url regardles of the request method.
 
 Examples:
 
@@ -14,7 +20,7 @@ Examples:
         return "This is a homepage";
     }, 'homepage');
 
-    //This is practiaclly the same
+    //This is practiacally the same
     $app->get('', function () {
     	return "This is a homepage";
     }, 'homepage');
