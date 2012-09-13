@@ -15,11 +15,12 @@ class App
     }
 
 
-    public function route($regex, $handler, $name = null)
+    public function route($http_method, $regex, $handler, $name = null)
     {
         $route = array(
             'regex'   => $regex,
-            'handler' => $handler
+            'handler' => $handler,
+            'method'  => $http_method
         );
 
         if ($name) {
@@ -27,6 +28,36 @@ class App
         } else {
             $this->routes[] = $route;
         }
+    }
+
+
+    public function get($regex, $handler, $name = null)
+    {
+        $this->route('get', $regex, $handler, $name);
+    }
+
+
+    public function post($regex, $handler, $name = null)
+    {
+        $this->route('post', $regex, $handler, $name);
+    }
+
+
+    public function put($regex, $handler, $name = null)
+    {
+        $this->route('put', $regex, $handler, $name);
+    }
+
+
+    public function delete($regex, $handler, $name = null)
+    {
+        $this->route('delete', $regex, $handler, $name);
+    }
+
+
+    public function all($regex, $handler, $name = null)
+    {
+        $this->route('all', $regex, $handler, $name);
     }
 
 
@@ -43,10 +74,14 @@ class App
         $this->debug = $debug;
         if (!$this->routes) throw new \Exception("No routes defined. ");
 
+        //fix server method
+        if (!empty($_POST['_method'])) $_SERVER['REQUEST_METHOD'] = $_POST['_method'];
+
         foreach ($this->routes as $route) {
             $regex = "@{$route['regex']}@i";
             $matches = array();
             if (preg_match($regex, Request::get('route'), $matches)) {
+                if ($route['method'] != 'all' && Request::method() != $route['method']) continue;
                 $this->request->route = $route;
 
                 array_shift($matches);
@@ -115,6 +150,24 @@ class Request
     public static function remove($key)
     {
         if (isset($_REQUEST[$key])) unset($_REQUEST[$key]);
+    }
+
+
+    public static function is_post()
+    {
+        return self::method() == 'post';
+    }
+
+
+    public static function method()
+    {
+        return strtolower($_SERVER['REQUEST_METHOD']);
+    }
+
+
+    public static function redirect($location, $code = 302)
+    {
+        header('Location: ' . $location); die;
     }
 }
 
