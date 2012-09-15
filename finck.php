@@ -2,10 +2,14 @@
 
 namespace Finck;
 
-class App
+class Finck
 {
+    protected static $_instance;
+    protected static $allowed_http_verbs = array('get', 'post', 'put', 'delete', 'all');
+
     public $request;
-    protected $debug = false;
+
+    protected $ENV;
     protected $routes = array();
     protected $middleware = array();
 
@@ -15,7 +19,14 @@ class App
     }
 
 
-    public function route($http_method, $regex, $handler, $name = null)
+    public static function getInstance()
+    {
+        if (!self::$_instance) self::$_instance = new Finck();
+        return self::$_instance;
+    }
+
+
+    public static function route($http_method, $regex, $handler, $name = null)
     {
         $route = array(
             'regex'   => $regex,
@@ -23,103 +34,122 @@ class App
             'method'  => $http_method
         );
 
+        $_self = self::getInstance();
         if ($name) {
-            $this->routes[$name] = $route;
+            $_self->routes[$name] = $route;
         } else {
-            $this->routes[] = $route;
+            $_self->routes[] = $route;
         }
     }
 
 
-    public function get($regex, $handler, $name = null)
+    public static function register_resource($resource, $handler)
     {
-        $this->route('get', $regex, $handler, $name);
+        self::get($resource, array($handler, 'index'), $resource . '_index');
+        self::get($resource . '/(?P<id>\d+)', array($handler, 'show'), $resource . '_show');
+        self::post($resource, array($handler, 'create'), $resource . '_create');
+        self::put($resource . '/(?P<id>\d+)', array($handler, 'update'), $resource . '_update');
+        self::delete($resource . '/(?P<id>\d+)', array($handler, 'destroy'), $resource . '_destroy');
+
+        self::get($resource . '/new', array($handler, 'add'), $resource . '_new');
+        self::get($resource . '/edit/(?P<id>\d+)', array($handler, 'edit'), $resource . '_edit');
     }
 
 
-    public function post($regex, $handler, $name = null)
+    public function get_routes()
     {
-        $this->route('post', $regex, $handler, $name);
+        return $this->routes;
     }
 
 
-    public function put($regex, $handler, $name = null)
+    public static function url($name, $args = array())
     {
-        $this->route('put', $regex, $handler, $name);
+        $routes = self::getInstance()->get_routes();
+        if (!array_key_exists($name, $routes)) throw new \Exception("No such route for key {$name}");
+        $route_string = $routes[$name]['regex'];
+
+        foreach ($args as $k => $v) {
+            $route_string = preg_replace("@\(\?P\<{$k}\>\\\(w|d)\+\)@i", $v, $route_string);
+        }
+
+        return '/' . $route_string;
     }
 
 
-    public function delete($regex, $handler, $name = null)
+    public static function __callStatic($method, $args = array())
     {
-        $this->route('delete', $regex, $handler, $name);
-    }
-
-
-    public function all($regex, $handler, $name = null)
-    {
-        $this->route('all', $regex, $handler, $name);
-    }
-
-
-    public function add_middleware($class_name)
-    {
-        if (!in_array($class_name, $this->middleware)) {
-            $this->middleware[] = $class_name;
+        if (in_array($method, self::$allowed_http_verbs)) {
+            $args = array_merge(array($method), $args);
+            call_user_func_array(array('self', 'route'), $args);
         }
     }
 
 
-    public function dispatch($debug = false)
+    public static function add_middleware($class_name)
     {
-        $this->debug = $debug;
-        if (!$this->routes) throw new \Exception("No routes defined. ");
+        if (!in_array($class_name, self::getInstance()->middleware)) self::getInstance()->middleware[] = $class_name;
+    }
 
-        //fix server method
+
+    public function get_middleware()
+    {
+        return $this->middleware;
+    }
+
+
+    public static function dispatch($ENV = 'development')
+    {
+        $_self = self::getInstance();
+        $_self->ENV = $ENV;
+        if (!$_self->routes) throw new \Exception("No routes defined. ");
+
+        //fix the server method
         if (!empty($_POST['_method'])) $_SERVER['REQUEST_METHOD'] = $_POST['_method'];
 
-        foreach ($this->routes as $route) {
+        foreach ($_self->routes as $route) {
             $regex = "@{$route['regex']}@i";
             $matches = array();
             if (preg_match($regex, Request::get('route'), $matches)) {
+                //skip this route if method doesn't match
                 if ($route['method'] != 'all' && Request::method() != $route['method']) continue;
-                $this->request->route = $route;
+
+                $_self->request->route = $route;
 
                 array_shift($matches);
                 $params = array_unique($matches);
-                $this->request->params = $params;
+                $_self->request->params = $params;
 
                 break;
             }
         }
 
-        //todo: add here default 404 as route or maybe handle exceptions as static files 404.html, 500.html
-        if (!$this->request->route) throw new NotFoundException("No route found");
+        //TODO: add here default 404 as route or maybe handle exceptions as static files 404.html, 500.html
+        if (!$_self->request->route) throw new NotFoundException("No route found");
 
         //here process middleware request
-        foreach ($this->middleware as $m) {
-            $this->request = $m::process_request($this->request);
-        }
+        $middleware = $_self->get_middleware();
+        foreach ($middleware as $m) $_self->request = $m::process_request($_self->request);
 
         $response = null;
 
         //here execute the route
-        $handler = $this->request->route['handler'];
+        $handler = $_self->request->route['handler'];
         if (is_object($handler) && get_class($handler) == 'Closure') {
-            $response = $handler($this->request);
-        } elseif (is_array($handler) && count($handler) == 2) {
+            $response = $handler($_self->request);
+        } elseif (is_array($handler)) {
             //get the class and method name
             list($class_name, $handler_name) = $handler;
+
             $class = new $class_name();
-            $class->$handler_name($this->request);
+            $response = $class->$handler_name($_self->request);
+        } else {
+            throw new \Exception('Invalid handler. Handlers must be either Closure or array of two elements: class, method. ');
         }
 
         //here process middleware response
-        foreach ($this->middleware as $m) {
-            $response = $m::process_response($response);
-        }
+        foreach ($middleware as $m) $response = $m::process_response($response);
 
-        print $response;
-        die;
+        print $response; die;
     }
 }
 
