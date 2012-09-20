@@ -54,6 +54,14 @@ Finck::get('articles/new', array('Articles', 'add'), 'articles_new');
 Finck::get('articles/edit/(?P<id>\d+)', array('Articles', 'edit'), 'articles_edit');
 ```
 
+You can build urls with the `url` method
+
+```php
+//Given you have already registered an articles resource
+Finck::url('articles'); //generates /articles
+Finck::url('articles_show', array('id' => 1)); //generates /articles/1
+```
+
 Example simple application:
 
 ```php
