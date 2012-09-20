@@ -1,55 +1,74 @@
 Finck is a small library for defining URL resources. It can be used for prototyping, simple web projects and even large scale applications. Finck does not provide any obligatory structure, particular template engine, or conventions, you can build upon its simplicity and integrate it in your own workflow.
 
-    App::route($request_method, $regex, $handler, $route_name = null)
-    App::get($regex, $handler, $route_name = null)
-    App::post($regex, $handler, $route_name = null)
-    App::put($regex, $handler, $route_name = null)
-    App::delete($regex, $handler, $route_name = null)
-    App::all($regex, $handler, $route_name = null)
+```php
+App::route($request_method, $regex, $handler, $route_name = null)
+App::get($regex, $handler, $route_name = null)
+App::post($regex, $handler, $route_name = null)
+App::put($regex, $handler, $route_name = null)
+App::delete($regex, $handler, $route_name = null)
+App::all($regex, $handler, $route_name = null)
+```
 
 The routing is done by the `route` method. It accepts the following parameters: http request method, a regular expression string that will match the desired url, a handler (closure or an array of type `array('class', 'method')`) and route name.
 Every handler must return a string (or method that generates string if you are using a template engine) and by default accepts one parameter - the Request object.
 
  - *Hint*: The regular expression can use named groups to simplify the usage of parameters in the handler.
  - *Hint 2*: There are shorthand methods for routing with different request methods - get, post, put, delete and all, which routes the matched url regardles of the request method.
+ - *Hint 3*: Finck app is Singleton object, you can access the Finck object by simply call to `Finck::getInstance()`.
 
 Examples:
 
-    //Matches empty regex - the root url
-    $app->route('get', '', function () {
-        return "This is a homepage";
-    }, 'homepage');
+```php
+use \Finck\Finck as Finck;
 
-    //This is practiacally the same
-    $app->get('', function () {
-    	return "This is a homepage";
-    }, 'homepage');
+//Matches empty regex - the root url
+Finck::route('get', '', function () {
+    return "This is a homepage";
+}, 'homepage');
 
-    //matches user-profile and pass it to the controller class
-    class Users
-    {
-        public function profile($request) {
-            return $request->params['username']
-        }
+//This is the same
+Finck::get('', function () {
+	return "This is a homepage";
+}, 'homepage');
+
+//matches user-profile and pass it to the controller class
+class Users
+{
+    public function profile($request) {
+        return $request->params['username']
     }
+}
 
-    $app->get('user/(?P<username>\w+)', array('Users', 'profile'));
+//other use cases
+Finck::get('user/(?P<username>\w+)', array('Users', 'profile'));
+Finck::post('articles', array('Articles', 'create'), 'articles_create');
 
-    $app->post('articles', array('Articles', 'create'), 'articles_create');
-    $app->put('articles/(?P<id>\d+)', array('Articles', 'update'), 'articles_update');
-    $app->delete('articles/(?P<id>\d+)', array('Articles', 'destroy'), 'articles_destroy');
+//You can register restful http resource
+Finck::register_resource('articles', 'Articles');
+
+//will init the following (similar to Ruby on Rails) url structure
+Finck::get('articles', array('Articles', 'index'), 'articles_index');
+Finck::get('articles/(?P<id>\d+)', array('Articles', 'show'), 'articles_show');
+Finck::post('articles', array('Articles', 'create'), 'articles_create');
+Finck::put('articles/(?P<id>\d+)', array('Articles', 'update'), 'articles_update');
+Finck::delete('articles/(?P<id>\d+)', array('Articles', 'destroy'), 'articles_destroy');
+Finck::get('articles/new', array('Articles', 'add'), 'articles_new');
+Finck::get('articles/edit/(?P<id>\d+)', array('Articles', 'edit'), 'articles_edit');
+```
 
 Exmaple index.php:
 
-    <?php
-    require_once 'finck.php';
+```php
+require_once 'finck.php';
+use \Finck\Finck as Finck;
 
-    $app = new \Finck\App();
-    $app->get('hello/(?P<name>\w+)', function ($request) {
-        return "Hello, " . $request->params['name'];
-    });
-    $app->get('', function () {
-        return "Welcome to our homepage! ";
-    }, 'homepage');
+Finck::get('hello/(?P<name>\w+)', function ($request) {
+    return "Hello, " . $request->params['name'];
+});
+Finck::get('', function () {
+    return "Welcome to our homepage! ";
+}, 'homepage');
 
-    $app->dispatch();
+//run the application
+Finck::dispatch();
+```
