@@ -16,8 +16,6 @@ Every handler must return a string (or method that generates string if you are u
  - *Hint 2*: There are shorthand methods for routing with different request methods - get, post, put, delete and all, which routes the matched url regardles of the request method.
  - *Hint 3*: Finck app is Singleton object, you can access the Finck object by simply call to `Finck::getInstance()`.
 
-Examples:
-
 ```php
 use \Finck\Finck as Finck;
 
@@ -56,7 +54,7 @@ Finck::get('articles/new', array('Articles', 'add'), 'articles_new');
 Finck::get('articles/edit/(?P<id>\d+)', array('Articles', 'edit'), 'articles_edit');
 ```
 
-Exmaple index.php:
+Example simple application:
 
 ```php
 require_once 'finck.php';
