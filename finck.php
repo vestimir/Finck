@@ -106,10 +106,11 @@ class Finck
         //fix the server method
         if (!empty($_POST['_method'])) $_SERVER['REQUEST_METHOD'] = $_POST['_method'];
 
+        $requested_route = Request::get('route');
         foreach ($_self->routes as $route) {
             $regex = "@{$route['regex']}@i";
             $matches = array();
-            if (preg_match($regex, Request::get('route'), $matches)) {
+            if (preg_match($regex, $requested_route, $matches)) {
                 //skip this route if method doesn't match
                 if ($route['method'] != 'all' && Request::method() != $route['method']) continue;
 
@@ -124,7 +125,7 @@ class Finck
         }
 
         //TODO: add here default 404 as route or maybe handle exceptions as static files 404.html, 500.html
-        if (!$_self->request->route) throw new NotFoundException("No route found");
+        if (!$_self->request->route) throw new NotFoundException("No route found for {$requested_route}");
 
         //here process middleware request
         $middleware = $_self->get_middleware();
