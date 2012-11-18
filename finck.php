@@ -190,6 +190,12 @@ class Request
     }
 
 
+    public static function is_xhr()
+    {
+        return (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest');
+    }
+
+
     public static function method()
     {
         return strtolower($_SERVER['REQUEST_METHOD']);
