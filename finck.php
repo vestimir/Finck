@@ -172,6 +172,12 @@ class Request
     }
 
 
+    public static function get_body()
+    {
+        return file_get_contents('php://input');
+    }
+
+
     public static function set($key, $value)
     {
         $_REQUEST[$key] = $value;
