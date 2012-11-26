@@ -45,7 +45,6 @@ class Finck
 
     public static function register_resource($resource, $handler)
     {
-        self::get($resource, array($handler, 'index'), $resource . '_index');
         self::get($resource . '/(?P<id>\d+)', array($handler, 'show'), $resource . '_show');
         self::post($resource, array($handler, 'create'), $resource . '_create');
         self::put($resource . '/(?P<id>\d+)', array($handler, 'update'), $resource . '_update');
@@ -53,6 +52,8 @@ class Finck
 
         self::get($resource . '/new', array($handler, 'add'), $resource . '_new');
         self::get($resource . '/edit/(?P<id>\d+)', array($handler, 'edit'), $resource . '_edit');
+
+        self::get($resource, array($handler, 'index'), $resource . '_index');
     }
 
 
