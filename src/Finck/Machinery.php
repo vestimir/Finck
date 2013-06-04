@@ -90,11 +90,13 @@ class Machinery
     }
 
 
-    public static function dispatch($requested_route)
+    public static function dispatch($requested_route = null)
     {
         $_self = self::getInstance();
 
         if (!$_self->routes) throw new \Exception('No routes defined. ');
+        
+        $requested_route = !empty($requested_route) ? $requested_route : Request::get('route');
 
         //fix the server method
         if (!empty($_POST['_method'])) $_SERVER['REQUEST_METHOD'] = $_POST['_method'];
