@@ -1,7 +1,17 @@
 {
-    "name" : "vestimir/finck",
-    "version" : "1.0.0",
-    "autoload" : {
+    "version": "1.0.0",
+    "name": "vestimir/finck",
+    "description": "A simple HTTP router library, like Sinatra for Ruby",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Vestimir Markov",
+            "email": "me@vestimir.com",
+            "homepage": "http://vestimir.com",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
     	"psr-0" : { "Finck" : "src/" }
     }
 }

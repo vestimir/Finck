@@ -110,6 +110,8 @@ class Machinery
         $_self = self::getInstance();
 
         if (!$_self->routes) throw new \Exception('No routes defined. ');
+        
+        $requested_route = !empty($requested_route) ? $requested_route : Request::get('route');
 
         $requested_route = !empty($requested_route) ? $requested_route : Request::get('route');
 
