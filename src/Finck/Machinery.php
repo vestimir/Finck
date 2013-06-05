@@ -5,6 +5,7 @@ namespace Finck;
 class Machinery
 {
     public $routes = array();
+    public $middleware = array();
 
     protected static $_instance;
     protected static $allowed_http_verbs = array('get', 'post', 'put', 'delete', 'all');
@@ -61,6 +62,20 @@ class Machinery
     }
 
 
+    public static function registerResource($resource, $handler)
+    {
+        self::get($resource . '/(?P<id>\d+)', array($handler, 'show'), $resource . '_show');
+        self::post($resource, array($handler, 'create'), $resource . '_create');
+        self::put($resource . '/(?P<id>\d+)', array($handler, 'update'), $resource . '_update');
+        self::delete($resource . '/(?P<id>\d+)', array($handler, 'destroy'), $resource . '_destroy');
+
+        self::get($resource . '/new', array($handler, 'add'), $resource . '_new');
+        self::get($resource . '/edit/(?P<id>\d+)', array($handler, 'edit'), $resource . '_edit');
+
+        self::get($resource, array($handler, 'index'), $resource . '_index');
+    }
+
+
     public static function __callStatic($method, $args = array())
     {
         if (in_array($method, self::$allowed_http_verbs)) {
@@ -90,11 +105,13 @@ class Machinery
     }
 
 
-    public static function dispatch($requested_route)
+    public static function dispatch($requested_route = null)
     {
         $_self = self::getInstance();
 
         if (!$_self->routes) throw new \Exception('No routes defined. ');
+
+        $requested_route = !empty($requested_route) ? $requested_route : Request::get('route');
 
         //fix the server method
         if (!empty($_POST['_method'])) $_SERVER['REQUEST_METHOD'] = $_POST['_method'];
@@ -118,6 +135,10 @@ class Machinery
 
         if (!$_self->request->route) throw new NotFoundException("No route found for {$requested_route}");
 
+        //here process middleware request
+        $middleware = $_self->middleware;
+        foreach ($middleware as $m) $_self->request = $m::processRequest($_self->request);
+
         //here execute the route
         $handler = $_self->request->route['handler'];
         if (is_object($handler) && get_class($handler) == 'Closure') {
@@ -134,6 +155,9 @@ class Machinery
             throw new \Exception('Invalid handler. Handlers must be either Closure or array of two elements: class, method. ');
         }
 
+        //here process middleware response
+        foreach ($middleware as $m) $response = $m::processResponse($response);
+
         return $response;
     }
 
@@ -141,5 +165,12 @@ class Machinery
     public static function getCurrentRoute()
     {
         return self::getInstance()->request->route;
+    }
+
+
+    public static function addMiddleware($middleware)
+    {
+        $class = new $middleware;
+        self::getInstance()->middleware[$middleware] = $class;
     }
 }

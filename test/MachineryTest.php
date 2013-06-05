@@ -11,6 +11,32 @@ class Dummy
     }
 }
 
+class Text
+{
+    public function show() {}
+    public function create() {}
+    public function update() {}
+    public function destroy() {}
+    public function add() {}
+    public function edit() {}
+    public function index() {}
+}
+
+
+class SampleMiddleware
+{
+    public static function processRequest($req)
+    {
+        return $req;
+    }
+
+
+    public static function processResponse($response)
+    {
+        return $response . ' bar';
+    }
+}
+
 class MachineryTest extends PHPUnit_Framework_TestCase
 {
     public function tearDown()
@@ -179,5 +205,30 @@ class MachineryTest extends PHPUnit_Framework_TestCase
         function plain_function($req) { return 'This is a test'; };
         Machinery::get('test', 'plain_function', 'test_route');
         $this->assertEquals('This is a test', Machinery::dispatch('/test'));
+    }
+
+
+    public function testRegisteringAResource()
+    {
+        Machinery::registerResource('texts', 'Text');
+        $routes = Machinery::getRoutes();
+        foreach (array('index', 'new', 'edit', 'show', 'create', 'update', 'destroy') as $function) {
+            $this->assertArrayHasKey('texts_' . $function, $routes);
+        }
+    }
+
+
+    public function testAddingMiddleware()
+    {
+        Machinery::addMiddleware('SampleMiddleware');
+        $this->assertArrayHasKey('SampleMiddleware', Machinery::getInstance()->middleware);
+    }
+
+
+    public function testMiddlewareAlteringOutput()
+    {
+        Machinery::addMiddleware('SampleMiddleware');
+        Machinery::get('test', function ($req) { return 'foo'; }, 'test_route');
+        $this->assertEquals(Machinery::dispatch('/test'), 'foo bar');
     }
 }
